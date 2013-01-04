@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<project xmlns:rhq="antlib:org.rhq.bundle" name="fuse-install" default="main">
+	<!-- Set global properties for this build -->
+	<property environment="env"/>
+	
+	
+	<property name="fuse.version" value="7.1.0.fuse-047"/>
+	
+	<!-- user and password for the Fuse Repo -->
+	<property name="fuse.user" value="${env.FUSE_USER}"/>
+	<property name="fuse.pwd" value="${env.FUSE_PWD}"/>
+	
+	
+	<!--   <property file="install.properties"/> -->
+	<!--
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+             <pathelement location="installation/lib/ant-contrib.jar"/>
+        </classpath>
+   </taskdef>
+	 -->
+	<condition property="isOnLinux">
+		<os family="unix"/>
+	</condition>
+	<condition property="isOnWindows">
+		<os family="windows"/>
+	</condition>
+	<condition property="isOnMax">
+		<os family="mac"/>
+	</condition>
+	<condition property="is64">
+		<or>
+			<os arch="x86_64"/>
+			<os arch="amd64"/>
+		</or>
+	</condition>
+	<condition property="is32">
+		<not>
+			<isset property="is64"/>
+		</not>
+	</condition>
+	<condition property="isX86">
+		<or>
+			<os arch="x86"/>
+			<os arch="i386"/>
+			<os arch="i486"/>
+			<os arch="i686"/>
+			<os arch="x86_64"/>
+			<os arch="amd64"/>
+		</or>
+	</condition>
+	<condition property="verified_platform">
+		<and>
+			<isset property="isOnLinux"/>
+			<isset property="is64"/>
+		</and>
+	</condition>
+	
+	
+	<rhq:bundle name="Fuse v7.1" version="1.0" description="Fuse v7.1 Bundle">
+		<rhq:input-property name="esb.home" description="ESB Home" required="true" defaultValue="fuse-esb-7.1" type="string"/>
+		<rhq:input-property name="fmc.home" description="FMC Home" required="true" defaultValue="fmc-7.1" type="string"/>
+
+		<rhq:deployment-unit name="Fuse Distro" manageRootDir="false" preinstallTarget="chk_platform" postinstallTarget="install_fuse">
+      <rhq:url-archive url="http://repo2.maven.org/maven2/org/fusesource/fabric/fuse-fabric/${fuse.version}/fuse-fabric-${fuse.version}.tar.gz">
+      </rhq:url-archive>
+
+
+			<!-- TODO to be able to download FMC we need to somehow download from the non-public mvn repo using authentication... -->
+<!--
+      <rhq:url-archive url="https://${fuse.user}:${fuse.pwd}@repo.fusesource.com/nexus/content/groups/m2-release-proxy/org/fusesource/fabric/fuse-fabric/${fuse.version}/fuse-fabric-${fuse.version}.tar.gz">
+      </rhq:url-archive>
+-->
+		</rhq:deployment-unit>
+	</rhq:bundle>
+	
+	<target name="main"/>
+	
+	<target name="chk_platform">
+		<property name="preinstallTargetExecuted" value="true"/>
+		<echo message="Verifying Platform for Linux and IA-64 chipset...."/>
+		<echo message="Your Fuse Repository username is ${fuse.user}"/>
+		<echo message="Your operating system is ${os.name}"/>
+		<echo message="Your chipset is ${os.arch}"/>
+		<echo message="Your Fuse ESB ${fuse.version} installation directory is ${rhq.deploy.dir}/${esb.home}"/>
+		<echo message="Your FMC installation directory is ${rhq.deploy.dir}/${fmc.home}"/>
+		<fail message="Operating system must be Linux and IA-64">
+			<condition>
+				<not>
+					<isset property="verified_platform"/>
+				</not>
+			</condition>
+		</fail>
+	</target>
+	
+	<target name="install_fuse">
+		<property name="postinstallTargetExecuted" value="true"/>
+		<echo message="Verifying Fuse ESB Home directory..."/>
+		<condition property="${rhq.deploy.dir}/${esb.home}.dir.present">
+			<and>
+				<available property="${rhq.deploy.dir}/${esb.home}.present" file="${rhq.deploy.dir}/${esb.home}" type="dir"/>
+			</and>
+		</condition>
+		<fail message="Fuse ESB Home Directory ${rhq.deploy.dir}/${esb.home} not present" unless="${rhq.deploy.dir}/${esb.home}.dir.present"/>
+	</target>
+</project>
