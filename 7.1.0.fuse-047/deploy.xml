@@ -58,7 +58,7 @@
 	
 	
 	<rhq:bundle name="Fuse v7.1" version="1.0" description="Fuse v7.1 Bundle">
-		<rhq:input-property name="esb.home" description="ESB Home" required="true" defaultValue="fuse-esb-7.1" type="string"/>
+		<rhq:input-property name="esb.home" description="ESB Home" required="true" defaultValue="fuse-fabric-${fuse.version}" type="string"/>
 		<rhq:input-property name="fmc.home" description="FMC Home" required="true" defaultValue="fmc-7.1" type="string"/>
 
 		<rhq:deployment-unit name="Fuse Distro" manageRootDir="false" preinstallTarget="chk_platform" postinstallTarget="install_fuse">
@@ -95,6 +95,19 @@
 	
 	<target name="install_fuse">
 		<property name="postinstallTargetExecuted" value="true"/>
+		
+		<!-- lets gunzip & untar the distros -->
+		<gunzip src="fuse-fabric-${fuse.version}.tar.gz"/>
+	  <delete file="fuse-fabric-${fuse.version}.tar.gz"/>
+		<untar src="fuse-fabric-${fuse.version}.tar" dest="${rhq.deploy.dir}"/>
+	  <delete file="fuse-fabric-${fuse.version}.tar"/>
+		
+		<chmod perm="775">
+		  <fileset dir="${rhq.deploy.dir}/${esb.home}/bin">
+		  </fileset>
+		</chmod>
+		
+		<!-- Lets check things worked... -->
 		<echo message="Verifying Fuse ESB Home directory..."/>
 		<condition property="${rhq.deploy.dir}/${esb.home}.dir.present">
 			<and>
